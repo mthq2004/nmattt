@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Call API</title>
+</head>
+<body>
+    <h1>Call API Example</h1>
+    
+    <!-- Form để nhập dữ liệu và gọi API -->
+    <form id="apiForm">
+        <label for="content">Content:</label><br>
+        <textarea id="content" name="content" rows="4" cols="50"></textarea><br><br>
+        <label for="key">Key:</label><br>
+        <textarea id="key" name="key" rows="4" cols="50"></textarea><br><br>
+        <button type="button" onclick="callAESAPI()">Encrypt AES</button>
+        <button type="button" onclick="callRSAAPI()">Encrypt RSA</button>
+    </form>
+
+    <!-- Hiển thị kết quả từ API -->
+    <div id="apiResponse"></div>
+
+    <script>
+        // Hàm gọi API mã hóa AES
+        function callAESAPI() {
+            var content = document.getElementById("content").value;
+            var key = document.getElementById("key").value;
+
+            var requestData = {
+                content: content,
+                key: key
+            };
+
+            fetch('http://localhost:8080/AES/encryption', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("apiResponse").innerHTML = "Encrypted Message (AES): " + data.encrypted_message;
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        // Hàm gọi API mã hóa RSA
+        function callRSAAPI() {
+            var content = document.getElementById("content").value;
+            var key = document.getElementById("key").value;
+
+            var requestData = {
+                content: content,
+                key: key
+            };
+
+            fetch('http://localhost:8080/RSA/encryption', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("apiResponse").innerHTML = "Encrypted Message (RSA): " + data.encrypted_message;
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>
