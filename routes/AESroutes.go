@@ -4,10 +4,10 @@ import (
 	"net/http"
 
 	"github.com/congmanh18/NMATTT_AESRSA/handler"
+	"gorm.io/gorm"
 )
 
-// SetupAESRoutes sets up the AES encryption and decryption routes.
-func AESRoutes() {
-	http.HandleFunc("/AES/encryption", handler.EncryptionAESHandler())
+func AESRoutes(db *gorm.DB) {
+	http.HandleFunc("/AES/encryption", handler.EncryptionAESHandler(db))
 	http.HandleFunc("/AES/decryption", handler.DecryptionAESHandler())
 }

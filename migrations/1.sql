@@ -3,8 +3,10 @@ CREATE TABLE data (
   "id" text PRIMARY KEY,
   "content" text,
   "key" text,
-  "created_at" TIMESTAMPTZ NOT NULL,
-  "updated_at" TIMESTAMPTZ NOT NULL
+  "public_key" text,
+  "private_key" text,
+  "type" text,
+  "created_at" TIMESTAMPTZ NOT NULL
 );
 
 -- +migrate Down
