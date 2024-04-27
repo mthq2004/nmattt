@@ -95,6 +95,7 @@ func EncryptionAESHandler(db *gorm.DB) http.HandlerFunc {
 
 		// Encode the encrypted message as base64
 		encodedMessage := base64.StdEncoding.EncodeToString(encryptedMessage)
+		data.Encrypted_content = encodedMessage
 		data.CreatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 		db.Create(&data)
 
@@ -113,6 +114,21 @@ func EncryptionAESHandler(db *gorm.DB) http.HandlerFunc {
 // DecryptionAESHandler handles requests for AES decryption.
 func DecryptionAESHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+			// Allow all origins
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		// Allow only POST and OPTIONS
+		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+		// Allow only Content-Type header
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		if r.Method == "OPTIONS" {
+			return
+		}
+
+		if r.Method != "POST" {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
 		// Parse request body
 		var data model.Data
 		data.ID = uuid.New().String()

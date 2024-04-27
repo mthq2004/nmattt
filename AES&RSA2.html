@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>AESRSA</title>
+        <link rel="stylesheet" href="bootstrap-5.3.3-dist/css/bootstrap.min.css" />
+        <!-- JS -->
+        <script src="bootstrap-5.3.3-dist/js/bootstrap.min.js"></script>
+        <script src="jquery-3.7.1.min.js"></script>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+        
+            .container-fluid {
+                margin: 0;
+                padding: 0;
+            }
+        
+            .btn {
+                width: 100%;
+            }
+        
+            input {
+                width: 100%;
+                height: 50px;
+            }
+            span, input {
+                width: 100%;
+                height: 50px;
+                border: 1px solid #000; 
+                border-radius: 5px; 
+                box-sizing: border-box; 
+                display: inline-block; 
+            }
+            .row {
+                margin: 0;
+            }
+        
+            .container {
+                max-width: 960px;
+            }
+
+        </style>
+        <script>
+            function AESencryption() {
+                var content = document.getElementById("contentAES").value;
+
+                fetch('http://localhost:8080/AES/encryption', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content: content })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById("resultsAES").innerText = data.encrypted_message;
+                        document.getElementById("keyAES").innerText = data.key;
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+            function AESdecryption() {
+                var content = document.getElementById("contentAES").value;
+                var key = document.getElementById("keyAES").innerText;
+
+                fetch('http://localhost:8080/AES/decryption', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content: content, key: key })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById("resultsAES").innerText = data.decrypted_message;
+                    })
+                    .catch(error => console.error('Error:', error));
+
+                    console.log(key)
+            }
+
+            function RSAencryption() {
+                    var content = document.getElementById("contentRSA").value;
+
+                    fetch('http://localhost:8080/RSA/encryption', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ content: content })
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            document.getElementById("resultsRSA").innerText = data.encrypted_message;
+                            document.getElementById("publicKeyRSA").innerText = data.publicKey;
+                            document.getElementById("privateKeyRSA").innerText = data.privateKey;
+                        })
+                        .catch(error => console.error('Error:', error));
+                }
+
+                function RSAdecryption() {
+                    var content = document.getElementById("contentRSA").value;
+                    var privateKey = document.getElementById("privateKeyRSA").innerText;
+
+                    fetch('http://localhost:8080/RSA/decryption', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ content: content, private_key: privateKey })
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            document.getElementById("resultsRSA").innerText = data.decrypted_message;
+                        })
+                        .catch(error => console.error('Error:', error));
+                }
+
+                function deleteRecord(id) {
+                        fetch('http://localhost:8080/delete', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ id: id })
+                        })
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Failed to delete record');
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                alert(data.message); // Hiển thị thông báo khi xóa thành công
+                                // Gọi lại hàm readAllData để cập nhật lại dữ liệu sau khi xóa
+                                readAllData();
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                // Xử lý lỗi nếu cần
+                            });
+                    }
+
+                function readAllData() {
+                    fetch('http://localhost:8080/readalldata')
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Failed to fetch data');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            renderData(data);
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            // Xử lý lỗi, nếu cần
+                        });
+                }
+
+                function renderData(data) {
+                    const tbody = document.getElementById("dataRows");
+                    tbody.innerHTML = ""; // Xóa các hàng dữ liệu cũ trước khi thêm dữ liệu mới
+
+                    data.forEach(item => {
+                        const newRow = document.createElement("tr");
+
+                        newRow.innerHTML = `
+                            <td>${item.id}</td>
+                            <td>${item.type}</td>
+                            <td>${item.key}</td>
+                            <td>${item.public_key}</td>
+                            <td>${item.private_key}</td>
+                            <td>${item.content}</td>
+                            <td>${item.encrypted_content}</td>
+                            <td>${item.created_at}</td>
+                            <td><button class="btn btn-danger" onclick="deleteRecord('${item.id}')">Delete</button></td>
+                        `;
+
+                        tbody.appendChild(newRow);
+                    });
+                }
+
+        </script>
+    </head>
+
+    <body>
+        <div class="container-fluid" style="border: 1px solid black">
+            <header class="container-fluid" style="border-bottom: 1px solid black">
+                <h1 class="text-center">BÀI TẬP NHẬP MÔN AN TOÀN THÔNG TIN</h1>
+            </header>
+        <main class="container-fluid p-5" style="border-bottom: 1px solid black">
+            <section class="container">
+                <div class="row">
+                    <div class="col-3 d-grid justify-content-center align-items-center">
+                        <h1>AES</h1>
+                    </div>
+                    <div class="col-9" style="border: 1px solid black; border-radius: 5px">
+                        <div class="table-responsive">    
+                            <td><label for="contentAES">Content:</label></td>
+                            <td colspan="4">
+                                <input type="text" id="contentAES">
+                            </td>
+                            <tr>
+                                <td>
+                                    <div>Key:</div>
+                                </td>
+                                <td colspan="4"><span id="keyAES"></span></td>
+                            </tr>
+                            <tr>
+                                <td><div>Result:</div></td>   
+                                <td colspan="4"><span id="resultsAES"></span></td>  
+                            </tr>
+                        </div>
+                        <td>
+                            <button class="btn btn-secondary" onclick="AESencryption()">Encrypt</button>
+                        </td>
+                        <td>
+                            <button class="btn btn-secondary" onclick="AESdecryption()">Decrypt</button>
+                        </td>   
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-3 d-grid justify-content-center align-items-center">
+                        <h1>RSA</h1>
+                    </div>
+                    <div class="col-9" style="border: 1px solid black; border-radius: 5px">
+                        <div class="table-responsive">    
+                            <td><label for="contentRSA">Content:</label></td>
+                            <td colspan="4">
+                                <input type="text" id="contentRSA">
+                            </td>
+                            <tr>
+                                <td>
+                                    <div>Public Key:</div>
+                                </td>
+                                <td colspan="4"><span id="publicKeyRSA"></span></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div>Private Key:</div>
+                                </td>
+                                <td colspan="4"><span id="privateKeyRSA"></span></td>
+                            </tr>
+                            <tr>
+                                <td><div>Result:</div></td>   
+                                <td colspan="4"><span id="resultsRSA"></span></td>  
+                            </tr>
+                        </div>
+                        <td>
+                            <button class="btn btn-secondary" onclick="RSAencryption()">Encrypt</button>
+                        </td>
+                        <td>
+                            <button class="btn btn-secondary" onclick="RSAdecryption()">Decrypt</button>
+                        </td>
+                    </div>
+                </div> 
+  
+                </div>
+            </section>
+
+        </main>
+        <footer class="container-fluid">
+            <div class="table-responsive p-3">
+                <button class="btn btn-primary" onclick="readAllData()">Read</button>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Type</th>
+                            <th>Key</th>
+                            <th>Public Key</th>
+                            <th>Private Key</th>
+                            <th>Message</th>
+                            <th>Code</th>
+                            <th>Time</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataRows">
+                    </tbody>
+                </table>
+            </div>
+        </footer>   
+        </div>
+
+    </body>
+
+</html>

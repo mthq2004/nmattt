@@ -12,7 +12,21 @@ func ReadTableData(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Set content type header to application/json
 		w.Header().Set("Content-Type", "application/json")
+		// Allow all origins
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		// Allow only POST and OPTIONS
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		// Allow only Content-Type header
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
+		if r.Method == "OPTIONS" {
+			return
+		}
+
+		if r.Method != "GET" {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
 		// Đọc dữ liệu từ bảng
 		var data []model.Data
 		if err := db.Find(&data).Error; err != nil {
@@ -31,6 +45,21 @@ func ReadTableData(db *gorm.DB) http.HandlerFunc {
 func DeleteByID(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		// Allow all origins
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		// Allow only POST and OPTIONS
+		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+		// Allow only Content-Type header
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		if r.Method == "OPTIONS" {
+			return
+		}
+
+		if r.Method != "POST" {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
 		var requestBody map[string]string
 		if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
 			http.Error(w, "Invalid JSON request body", http.StatusBadRequest)
