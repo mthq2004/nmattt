@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/congmanh18/NMATTT_AESRSA/database"
+	"github.com/congmanh18/NMATTT_AESRSA/handler"
 	"github.com/congmanh18/NMATTT_AESRSA/routes"
 	"github.com/joho/godotenv"
 )
@@ -43,6 +44,9 @@ func main() {
 	fmt.Println("Successfully")
 	routes.AESRoutes(db)
 	routes.RSARoutes(db)
+	http.HandleFunc("/readalldata", handler.ReadTableData(db))
+	http.HandleFunc("/delete", handler.DeleteByID(db))
+
 	http.ListenAndServe(":8080", nil)
 
 }
