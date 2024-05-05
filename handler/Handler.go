@@ -10,13 +10,9 @@ import (
 
 func ReadTableData(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Set content type header to application/json
 		w.Header().Set("Content-Type", "application/json")
-		// Allow all origins
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		// Allow only POST and OPTIONS
 		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
-		// Allow only Content-Type header
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
 		if r.Method == "OPTIONS" {
@@ -45,11 +41,8 @@ func ReadTableData(db *gorm.DB) http.HandlerFunc {
 func DeleteByID(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		// Allow all origins
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		// Allow only POST and OPTIONS
 		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-		// Allow only Content-Type header
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
 		if r.Method == "OPTIONS" {

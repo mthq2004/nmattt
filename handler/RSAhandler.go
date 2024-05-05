@@ -1,12 +1,12 @@
 package handler
 
 import (
-	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
+	"math/big"
 	"net/http"
 	"time"
 
@@ -17,28 +17,62 @@ import (
 	"github.com/google/uuid"
 )
 
-// EncryptRSA encrypts a message using RSA encryption.
-func EncryptRSA(plainText []byte, publicKey *rsa.PublicKey) ([]byte, error) {
-	encrypted, err := rsa.EncryptPKCS1v15(rand.Reader, publicKey, plainText)
-	if err != nil {
-		return nil, err
+func EncryptRSA(publicKey *rsa.PublicKey, plainText []byte) ([]byte, error) {
+	e := big.NewInt(int64(publicKey.E))
+	n := publicKey.N
+	encryptedMsg := make([]byte, 0)
+
+	for _, char := range plainText {
+		// Mã hóa từng byte trong plainText sử dụng khóa công khai
+		c := new(big.Int).Exp(big.NewInt(int64(char)), e, n)
+		// Chuyển đổi giá trị đã mã hóa thành byte và nối vào encryptedMsg
+		encryptedMsg = append(encryptedMsg, c.Bytes()...)
 	}
-	return encrypted, nil
+
+	return encryptedMsg, nil
 }
 
-// DecryptRSA decrypts a message using RSA decryption.
-func DecryptRSA(encrypted []byte, privateKey *rsa.PrivateKey) ([]byte, error) {
-	decrypted, err := rsa.DecryptPKCS1v15(rand.Reader, privateKey, encrypted)
-	if err != nil {
-		return nil, err
+func DecryptRSA(privateKey *rsa.PrivateKey, encryptedMsg []byte) ([]byte, error) {
+	d := privateKey.D
+	n := privateKey.N
+	decryptedMsg := make([]byte, 0)
+
+	// Lặp qua từng phần tử trong mảng encryptedMsg
+	for i := 0; i < len(encryptedMsg); i += privateKey.Size() {
+		block := encryptedMsg[i : i+privateKey.Size()]
+		// Chuyển đổi khối byte thành một số nguyên
+		c := new(big.Int).SetBytes(block)
+		// Giải mã số nguyên sử dụng khóa riêng tư
+		m := new(big.Int).Exp(c, d, n)
+		// Chuyển đổi số nguyên đã giải mã thành byte và nối vào decryptedMsg
+		decryptedMsg = append(decryptedMsg, m.Bytes()...)
 	}
-	return decrypted, nil
+
+	return decryptedMsg, nil
 }
+
+// // EncryptRSA encrypts a message using RSA encryption.
+// func EncryptRSA(plainText []byte, publicKey *rsa.PublicKey) ([]byte, error) {
+// 	encrypted, err := rsa.EncryptPKCS1v15(rand.Reader, publicKey, plainText)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return encrypted, nil
+// }
+
+// // DecryptRSA decrypts a message using RSA decryption.
+// func DecryptRSA(encrypted []byte, privateKey *rsa.PrivateKey) ([]byte, error) {
+// 	decrypted, err := rsa.DecryptPKCS1v15(rand.Reader, privateKey, encrypted)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return decrypted, nil
+// }
 
 // EncryptionRSAHandler handles requests for RSA encryption.
 func EncryptionRSAHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-			// Allow all origins
+		// Allow all origins
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		// Allow only POST and OPTIONS
 		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
@@ -57,7 +91,7 @@ func EncryptionRSAHandler(db *gorm.DB) http.HandlerFunc {
 		var data model.Data
 		data.ID = uuid.New().String()
 		data.Type = "RSA"
-		data.PublicKey, data.PrivateKey, _ = utils.GenerateRSAKeyPair(2048)
+		data.PublicKey, data.PrivateKey, _ = utils.GenerateRSAKeyPair(1024)
 
 		err := json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
@@ -83,7 +117,7 @@ func EncryptionRSAHandler(db *gorm.DB) http.HandlerFunc {
 		}
 
 		// Encrypt the message
-		encryptedMessage, err := EncryptRSA([]byte(*data.Content), publicKey)
+		encryptedMessage, err := EncryptRSA(publicKey, []byte(*data.Content))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -158,7 +192,7 @@ func DecryptionRSAHandler() http.HandlerFunc {
 		}
 
 		// Decrypt the message
-		decryptedMessage, err := DecryptRSA(encryptedMessage, privateKey)
+		decryptedMessage, err := DecryptRSA(privateKey, encryptedMessage)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

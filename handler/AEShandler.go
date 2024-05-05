@@ -18,26 +18,28 @@ import (
 	"github.com/google/uuid"
 )
 
-// EncryptAES encrypts a plaintext message using AES encryption.
 func EncryptAES(plainText []byte, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
 
-	ciphertext := make([]byte, aes.BlockSize+len(plainText))
-	iv := ciphertext[:aes.BlockSize]
+	ciphertext := make([]byte, len(plainText))
+
+	iv := make([]byte, aes.BlockSize)
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
 		return nil, err
 	}
 
-	stream := cipher.NewCFBEncrypter(block, iv)
-	stream.XORKeyStream(ciphertext[aes.BlockSize:], plainText)
+	stream := cipher.NewCTR(block, iv)
+	stream.XORKeyStream(ciphertext, plainText)
+
+	// Prepend IV to ciphertext
+	ciphertext = append(iv, ciphertext...)
 
 	return ciphertext, nil
 }
 
-// DecryptAES decrypts an encrypted message using AES encryption.
 func DecryptAES(ciphertext []byte, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -47,13 +49,16 @@ func DecryptAES(ciphertext []byte, key []byte) ([]byte, error) {
 	if len(ciphertext) < aes.BlockSize {
 		return nil, fmt.Errorf("ciphertext is too short")
 	}
+
 	iv := ciphertext[:aes.BlockSize]
 	ciphertext = ciphertext[aes.BlockSize:]
 
-	stream := cipher.NewCFBDecrypter(block, iv)
-	stream.XORKeyStream(ciphertext, ciphertext)
+	plaintext := make([]byte, len(ciphertext))
 
-	return ciphertext, nil
+	stream := cipher.NewCTR(block, iv)
+	stream.XORKeyStream(plaintext, ciphertext)
+
+	return plaintext, nil
 }
 
 // EncryptionAESHandler handles requests for AES encryption.
@@ -114,7 +119,7 @@ func EncryptionAESHandler(db *gorm.DB) http.HandlerFunc {
 // DecryptionAESHandler handles requests for AES decryption.
 func DecryptionAESHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-			// Allow all origins
+		// Allow all origins
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		// Allow only POST and OPTIONS
 		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
